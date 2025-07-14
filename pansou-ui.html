@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PanSou - 网盘资源搜索</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .advanced-options {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .options-toggle {
+            background: none;
+            border: none;
+            color: #667eea;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .options-content {
+            display: none;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .option-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .option-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .option-group select, .option-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #667eea;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .results-count {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .platform-icons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .platform-icon {
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .platform-baidu { background: #3385ff; }
+        .platform-aliyun { background: #ff6a00; }
+        .platform-quark { background: #00c896; }
+        .platform-tianyi { background: #1890ff; }
+        .platform-uc { background: #ff4d4f; }
+        .platform-mobile { background: #52c41a; }
+        .platform-115 { background: #722ed1; }
+        .platform-pikpak { background: #fa541c; }
+        .platform-xunlei { background: #13c2c2; }
+        .platform-123 { background: #eb2f96; }
+        .platform-magnet { background: #595959; }
+        .platform-ed2k { background: #fa8c16; }
+
+        .results-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        }
+
+        .result-card {
+            border: 1px solid #e8e8e8;
+            border-radius: 12px;
+            padding: 20px;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .result-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .result-time {
+            font-size: 12px;
+            color: #999;
+            margin-left: 10px;
+        }
+
+        .result-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            max-height: 60px;
+            overflow: hidden;
+        }
+
+        .result-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .result-link {
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .result-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .result-password {
+            background: #f0f0f0;
+            color: #666;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        .error-message {
+            background: #fff2f0;
+            border: 1px solid #ffccc7;
+            border-radius: 8px;
+            padding: 15px;
+            color: #a8071a;
+            margin-top: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .search-form {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: unset;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-tabs {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔍 PanSou</h1>
+        <p>高性能网盘资源搜索引擎 - 支持多平台并发搜索</p>
+    </div>
+
+    <div class="search-section">
+        <form class="search-form" onsubmit="handleSearch(event)">
+            <input type="text" class="search-input" id="searchInput" placeholder="请输入搜索关键词，如：速度与激情" required>
+            <button type="submit" class="search-btn" id="searchBtn">搜索</button>
+        </form>
+
+        <div class="advanced-options">
+            <button class="options-toggle" onclick="toggleOptions()">
+                <span id="optionsToggleText">▼ 高级选项</span>
+            </button>
+            <div class="options-content" id="optionsContent">
+                <div class="option-group">
+                    <label for="sourceSelect">数据来源:</label>
+                    <select id="sourceSelect">
+                        <option value="all">全部来源</option>
+                        <option value="tg">仅Telegram</option>
+                        <option value="plugin">仅插件</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label for="resultType">结果类型:</label>
+                    <select id="resultType">
+                        <option value="merge">按类型合并</option>
+                        <option value="results">详细结果</option>
+                        <option value="all">全部数据</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label for="concurrency">并发数:</label>
+                    <input type="number" id="concurrency" min="1" max="20" value="10">
+                </div>
+                <div class="option-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="refreshCache">
+                        <label for="refreshCache">强制刷新缓存</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="results-section" id="resultsSection">
+        <div class="results-header">
+            <div class="results-count" id="resultsCount">找到 0 个结果</div>
+            <div class="filter-tabs" id="filterTabs">
+                <div class="filter-tab active" data-filter="all">全部</div>
+            </div>
+        </div>
+
+        <div class="platform-icons" id="platformIcons"></div>
+
+        <div class="results-grid" id="resultsGrid"></div>
+    </div>
+</div>
+
+<script>
+    let searchResults = [];
+    let currentFilter = 'all';
+    const API_BASE = '/api'; // 修改为实际的API地址
+
+    // 平台配置
+    const platforms = {
+        baidu: { name: '百度网盘', class: 'platform-baidu' },
+        aliyun: { name: '阿里云盘', class: 'platform-aliyun' },
+        quark: { name: '夸克网盘', class: 'platform-quark' },
+        tianyi: { name: '天翼云盘', class: 'platform-tianyi' },
+        uc: { name: 'UC网盘', class: 'platform-uc' },
+        mobile: { name: '移动云盘', class: 'platform-mobile' },
+        '115': { name: '115网盘', class: 'platform-115' },
+        pikpak: { name: 'PikPak', class: 'platform-pikpak' },
+        xunlei: { name: '迅雷网盘', class: 'platform-xunlei' },
+        '123': { name: '123网盘', class: 'platform-123' },
+        magnet: { name: '磁力链接', class: 'platform-magnet' },
+        ed2k: { name: 'eMule链接', class: 'platform-ed2k' }
+    };
+
+    function toggleOptions() {
+        const content = document.getElementById('optionsContent');
+        const toggle = document.getElementById('optionsToggleText');
+
+        if (content.style.display === 'flex') {
+            content.style.display = 'none';
+            toggle.textContent = '▼ 高级选项';
+        } else {
+            content.style.display = 'flex';
+            toggle.textContent = '▲ 高级选项';
+        }
+    }
+
+    async function handleSearch(event) {
+        event.preventDefault();
+
+        const keyword = document.getElementById('searchInput').value.trim();
+        if (!keyword) return;
+
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsSection = document.getElementById('resultsSection');
+
+        searchBtn.disabled = true;
+        searchBtn.innerHTML = '<div class="loading">搜索中...</div>';
+
+        try {
+            const params = {
+                kw: keyword,
+                src: document.getElementById('sourceSelect').value,
+                res: document.getElementById('resultType').value,
+                conc: parseInt(document.getElementById('concurrency').value),
+                refresh: document.getElementById('refreshCache').checked
+            };
+
+            const response = await fetch(`${API_BASE}/search`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(params)
+            });
+
+            if (!response.ok) {
+                throw new Error(`搜索失败: ${response.status}`);
+            }
+
+            const data = await response.json();
+            searchResults = data;
+
+            displayResults(data);
+            resultsSection.style.display = 'block';
+
+        } catch (error) {
+            console.error('搜索错误:', error);
+            showError(error.message);
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.textContent = '搜索';
+        }
+    }
+
+    function displayResults(data) {
+        const resultsCount = document.getElementById('resultsCount');
+        const filterTabs = document.getElementById('filterTabs');
+        const platformIcons = document.getElementById('platformIcons');
+        const resultsGrid = document.getElementById('resultsGrid');
+
+        // 更新结果计数
+        resultsCount.textContent = `找到 ${data.total || 0} 个结果`;
+
+        // 创建过滤标签
+        const availableTypes = Object.keys(data.merged_by_type || {});
+        filterTabs.innerHTML = '<div class="filter-tab active" data-filter="all">全部</div>';
+
+        availableTypes.forEach(type => {
+            const count = data.merged_by_type[type]?.length || 0;
+            const tab = document.createElement('div');
+            tab.className = 'filter-tab';
+            tab.dataset.filter = type;
+            tab.textContent = `${platforms[type]?.name || type} (${count})`;
+            tab.onclick = () => filterResults(type);
+            filterTabs.appendChild(tab);
+        });
+
+        // 显示平台图标
+        platformIcons.innerHTML = '';
+        availableTypes.forEach(type => {
+            const icon = document.createElement('div');
+            icon.className = `platform-icon ${platforms[type]?.class || ''}`;
+            icon.textContent = platforms[type]?.name || type;
+            platformIcons.appendChild(icon);
+        });
+
+        // 显示结果
+        displayFilteredResults(data, 'all');
+    }
+
+    function filterResults(type) {
+        // 更新活动标签
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.filter === type) {
+                tab.classList.add('active');
+            }
+        });
+
+        currentFilter = type;
+        displayFilteredResults(searchResults, type);
+    }
+
+    function displayFilteredResults(data, filterType) {
+        const resultsGrid = document.getElementById('resultsGrid');
+        resultsGrid.innerHTML = '';
+
+        let results = [];
+
+        if (filterType === 'all') {
+            // 显示所有类型的结果
+            Object.keys(data.merged_by_type || {}).forEach(type => {
+                results.push(...(data.merged_by_type[type] || []).map(item => ({
+                    ...item,
+                    type: type
+                })));
+            });
+        } else {
+            // 显示特定类型的结果
+            results = (data.merged_by_type[filterType] || []).map(item => ({
+                ...item,
+                type: filterType
+            }));
+        }
+
+        if (results.length === 0) {
+            resultsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <h3>暂无结果</h3>
+                        <p>尝试使用不同的关键词或调整搜索条件</p>
+                    </div>
+                `;
+            return;
+        }
+
+        results.forEach(result => {
+            const card = createResultCard(result);
+            resultsGrid.appendChild(card);
+        });
+    }
+
+    function createResultCard(result) {
+        const card = document.createElement('div');
+        card.className = 'result-card';
+
+        const platformInfo = platforms[result.type] || { name: result.type, class: '' };
+
+        card.innerHTML = `
+                <div class="result-header">
+                    <div class="result-title">${result.note || result.title || '未知标题'}</div>
+                    <div class="result-time">${formatTime(result.datetime)}</div>
+                </div>
+                <div class="result-content">
+                    <span class="platform-icon ${platformInfo.class}" style="display: inline-block; margin-right: 10px; margin-bottom: 10px;">
+                        ${platformInfo.name}
+                    </span>
+                    ${result.content || ''}
+                </div>
+                <div class="result-links">
+                    <a href="${result.url}" target="_blank" class="result-link ${platformInfo.class}">
+                        📁 打开链接
+                    </a>
+                    ${result.password ? `<span class="result-password">密码: ${result.password}</span>` : ''}
+                </div>
+            `;
+
+        return card;
+    }
+
+    function formatTime(dateString) {
+        if (!dateString) return '';
+
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = now - date;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+            return '今天';
+        } else if (diffDays === 1) {
+            return '昨天';
+        } else if (diffDays < 7) {
+            return `${diffDays}天前`;
+        } else {
+            return date.toLocaleDateString('zh-CN');
+        }
+    }
+
+    function showError(message) {
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsGrid = document.getElementById('resultsGrid');
+
+        resultsGrid.innerHTML = `
+                <div class="error-message">
+                    <h3>搜索出错</h3>
+                    <p>${message}</p>
+                    <p>请检查网络连接或稍后重试</p>
+                </div>
+            `;
+
+        resultsSection.style.display = 'block';
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 可以在这里添加初始化逻辑
+    });
+</script>
+</body>
+</html>
