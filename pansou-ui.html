@@ -436,7 +436,7 @@
 <script>
     let searchResults = [];
     let currentFilter = 'all';
-    const API_BASE = '/api'; // 修改为实际的API地址
+    const API_BASE = 'https://pansou.252035.xyz/api'; // 修改为实际的API地址
 
     // 平台配置
     const platforms = {
@@ -500,11 +500,16 @@
                 throw new Error(`搜索失败: ${response.status}`);
             }
 
-            const data = await response.json();
-            searchResults = data;
+            const result = await response.json();
 
-            displayResults(data);
-            resultsSection.style.display = 'block';
+            // 检查返回的数据结构
+            if (result.code === 0 && result.data) {
+                searchResults = result.data;
+                displayResults(result.data);
+                resultsSection.style.display = 'block';
+            } else {
+                throw new Error(result.message || '搜索失败');
+            }
 
         } catch (error) {
             console.error('搜索错误:', error);
@@ -573,14 +578,16 @@
         if (filterType === 'all') {
             // 显示所有类型的结果
             Object.keys(data.merged_by_type || {}).forEach(type => {
-                results.push(...(data.merged_by_type[type] || []).map(item => ({
+                const items = data.merged_by_type[type] || [];
+                results.push(...items.map(item => ({
                     ...item,
                     type: type
                 })));
             });
         } else {
             // 显示特定类型的结果
-            results = (data.merged_by_type[filterType] || []).map(item => ({
+            const items = data.merged_by_type[filterType] || [];
+            results = items.map(item => ({
                 ...item,
                 type: filterType
             }));
@@ -599,6 +606,9 @@
             return;
         }
 
+        // 按时间倒序排序
+        results.sort((a, b) => new Date(b.datetime || 0) - new Date(a.datetime || 0));
+
         results.forEach(result => {
             const card = createResultCard(result);
             resultsGrid.appendChild(card);
@@ -611,22 +621,41 @@
 
         const platformInfo = platforms[result.type] || { name: result.type, class: '' };
 
+        // 处理时间显示
+        const timeStr = formatTime(result.datetime);
+
+        // 处理标题和内容
+        const title = result.note || result.title || '未知资源';
+        const content = result.content || '';
+
+        // 处理密码显示
+        const passwordHtml = result.password ?
+            `<span class="result-password">密码: ${result.password}</span>` : '';
+
+        // 创建复制链接按钮
+        const copyBtnHtml = `
+                <button class="result-link copy-btn" onclick="copyToClipboard('${result.url}', '${result.password || ''}')">
+                    📋 复制链接
+                </button>
+            `;
+
         card.innerHTML = `
                 <div class="result-header">
-                    <div class="result-title">${result.note || result.title || '未知标题'}</div>
-                    <div class="result-time">${formatTime(result.datetime)}</div>
+                    <div class="result-title">${title}</div>
+                    <div class="result-time">${timeStr}</div>
                 </div>
                 <div class="result-content">
                     <span class="platform-icon ${platformInfo.class}" style="display: inline-block; margin-right: 10px; margin-bottom: 10px;">
                         ${platformInfo.name}
                     </span>
-                    ${result.content || ''}
+                    ${content}
                 </div>
                 <div class="result-links">
                     <a href="${result.url}" target="_blank" class="result-link ${platformInfo.class}">
                         📁 打开链接
                     </a>
-                    ${result.password ? `<span class="result-password">密码: ${result.password}</span>` : ''}
+                    ${copyBtnHtml}
+                    ${passwordHtml}
                 </div>
             `;
 
