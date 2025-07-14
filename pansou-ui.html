@@ -153,10 +153,28 @@
 
         .checkbox-group {
             display: flex;
+            height: 100%;
             align-items: center;
             gap: 8px;
         }
+        .custom-checkbox {
+            width: 18px !important;
+            height: 18px !important;
+            border: 2px solid currentColor;
+            border-radius: 3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
 
+        .custom-checkbox-label{
+            display: block;
+            margin-bottom: 0 !important;
+            font-weight: 500;
+            color: #555;
+        }
         .loading {
             text-align: center;
             /*padding: 40px;*/
@@ -500,8 +518,8 @@
                 </div>
                 <div class="option-group">
                     <div class="checkbox-group">
-                        <input type="checkbox" id="refreshCache">
-                        <label for="refreshCache">强制刷新缓存</label>
+                        <input class="custom-checkbox" type="checkbox" id="refreshCache">
+                        <label class="custom-checkbox-label" for="refreshCache">强制刷新缓存</label>
                     </div>
                 </div>
             </div>
